@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<devices>
+   <device name="Station">
+      <startTime>0</startTime>
+      <stopTime>1800000</stopTime>
+      <fileSize>50</fileSize>
+      <sensorCount>1</sensorCount>
+      <strategy>runtime</strategy>
+      <freq>60000</freq>
+      <latitude>-15</latitude>
+      <longitude>-15</longitude>
+      <speed>26.8224</speed>
+      <radius>50</radius>
+      <latency>50</latency>
+      <capacity>1073741824</capacity>
+      <maxInBW>1562</maxInBW>
+      <maxOutBW>1562</maxOutBW>
+      <diskBW>1562</diskBW>
+      <cores>1</cores>
+      <perCorePocessing>0.001</perCorePocessing>
+      <ram>536870912</ram>
+      <onD>1</onD>
+      <offD>1</offD>
+      <minpower>0.065</minpower>
+      <idlepower>1.475</idlepower>
+      <maxpower>2.0</maxpower>
+   </device>
+</devices>

@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+   <modelVersion>4.0.0</modelVersion>
+
+   <groupId>at.ac.uibk.dps.cloud.simulator</groupId>
+   <artifactId>dissect-cf-fog-base</artifactId>
+   <version>1.0.0-SNAPSHOT</version>
+   <packaging>pom</packaging>
+
+   <name>DISSECT-CF-Fog</name>
+   <description>DISSECT-CF-Fog simulator for modelling IoT-Fog-Cloud systems</description>
+   <inceptionYear>2012</inceptionYear>
+   <organization>
+      <name>University of Innsbruck &amp; MTA SZTAKI &amp; University of Szeged (SED)</name>
+   </organization>
+   <licenses>
+      <license>
+         <name>GNU Lesser General Public License (LGPL) version 3.0</name>
+         <url>http://www.gnu.org/licenses/lgpl.txt</url>
+         <distribution>repo</distribution>
+      </license>
+   </licenses>
+
+   <modules>
+      <module>dissect-cf-core</module>
+      <module>dissect-cf-application</module>
+   </modules>
+
+   <properties>
+      <java.version>10</java.version>
+
+      <!-- Checkstyle properties -->
+      <checkstyle.base-location>${project.basedir}</checkstyle.base-location>
+      <checkstyle.relative-location>build-tools/code-style</checkstyle.relative-location>
+      <checkstyle.location>${checkstyle.base-location}/${checkstyle.relative-location}</checkstyle.location>
+      <checkstyle.severity>error</checkstyle.severity>
+   </properties>
+
+   <dependencies>
+      <dependency>
+         <groupId>junit</groupId>
+         <artifactId>junit</artifactId>
+         <version>4.11</version>
+         <scope>test</scope>
+      </dependency>
+   </dependencies>
+
+   <build>
+      <plugins>
+         <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-checkstyle-plugin</artifactId>
+            <version>3.1.2</version>
+            <configuration>
+               <configLocation>${checkstyle.location}/checkstyle_rules.xml</configLocation>
+               <suppressionsLocation>${checkstyle.location}/suppressions.xml</suppressionsLocation>
+               <consoleOutput>false</consoleOutput>
+               <failOnViolation>true</failOnViolation>
+               <logViolationsToConsole>true</logViolationsToConsole>
+               <violationSeverity>${checkstyle.severity}</violationSeverity>
+               <includeTestResources>true</includeTestResources>
+            </configuration>
+            <executions>
+               <execution>
+                  <id>validate</id>
+                  <phase>validate</phase>
+                  <goals>
+                     <goal>check</goal>
+                  </goals>
+               </execution>
+            </executions>
+         </plugin>
+         <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <version>2.3.2</version>
+            <configuration>
+               <source>${java.version}</source>
+               <target>${java.version}</target>
+               <encoding>UTF-8</encoding>
+            </configuration>
+         </plugin>
+         <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <version>3.0.0</version>
+            <configuration>
+               <show>private</show>
+            </configuration>
+         </plugin>
+         <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-source-plugin</artifactId>
+            <version>2.2.1</version>
+            <executions>
+               <execution>
+                  <id>attach-sources</id>
+                  <phase>verify</phase>
+                  <goals>
+                     <goal>jar</goal>
+                  </goals>
+               </execution>
+            </executions>
+         </plugin>
+         <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>3.0.0-M5</version>
+         </plugin>
+      </plugins>
+      <resources>
+         <resource>
+            <directory>${basedir}/src/main/resources</directory>
+         </resource>
+         <resource>
+            <directory>${basedir}/../</directory>
+            <filtering>false</filtering>
+            <includes>
+               <include>COPYING</include>
+               <include>COPYING.LESSER</include>
+               <include>README.md</include>
+            </includes>
+         </resource>
+      </resources>
+   </build>
+</project>

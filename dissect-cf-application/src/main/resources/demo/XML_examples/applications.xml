@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<appliances>
+   <appliance name="cloud1">
+      <latitude>10</latitude>
+      <longitude>10</longitude>
+      <range>500</range>
+      <file>LPDS_original</file>
+      <applications>
+         <application name="app1">
+            <freq>60000</freq>
+            <tasksize>1024</tasksize>
+            <instance>a2.xlarge</instance>
+            <countOfInstructions>1024</countOfInstructions>
+            <threshold>1</threshold>
+            <strategy>load</strategy>
+            <canJoin>false</canJoin>
+         </application>
+      </applications>
+   </appliance>
+   <appliance name="fog1">
+      <latitude>5</latitude>
+      <longitude>-5</longitude>
+      <range>500</range>
+      <file>LPDS_32</file>
+      <applications>
+         <application name="app2">
+            <freq>60000</freq>
+            <tasksize>1024</tasksize>
+            <instance>a1.large</instance>
+            <countOfInstructions>1024</countOfInstructions>
+            <threshold>1</threshold>
+            <strategy>load</strategy>
+            <canJoin>true</canJoin>
+         </application>
+         <application name="app3">
+            <freq>60000</freq>
+            <tasksize>1024</tasksize>
+            <instance>a1.large</instance>
+            <countOfInstructions>1024</countOfInstructions>
+            <threshold>1</threshold>
+            <strategy>load</strategy>
+            <canJoin>true</canJoin>
+         </application>
+      </applications>
+      <neighbours>
+         <neighbour name="fog2">
+            <latency>10</latency>
+         </neighbour>
+         <neighbour name="cloud1">
+            <latency>40</latency>
+            <parent>true</parent>
+         </neighbour>
+      </neighbours>
+   </appliance>
+   <appliance name="fog2">
+      <latitude>5</latitude>
+      <longitude>5</longitude>
+      <range>500</range>
+      <file>LPDS_32</file>
+      <applications>
+         <application name="app4">
+            <freq>60000</freq>
+            <tasksize>1024</tasksize>
+            <instance>a1.large</instance>
+            <countOfInstructions>1024</countOfInstructions>
+            <threshold>1</threshold>
+            <strategy>load</strategy>
+            <canJoin>true</canJoin>
+         </application>
+      </applications>
+      <neighbours>
+         <neighbour name="fog1">
+            <latency>20</latency>
+         </neighbour>
+         <neighbour name="cloud1">
+            <latency>30</latency>
+            <parent>true</parent>
+         </neighbour>
+      </neighbours>
+   </appliance>
+</appliances>
