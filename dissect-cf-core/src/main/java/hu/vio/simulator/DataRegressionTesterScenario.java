@@ -16,6 +16,8 @@ import hu.u_szeged.inf.fog.simulator.physical.ComputingAppliance;
 import hu.u_szeged.inf.fog.simulator.physical.MicroController;
 import hu.u_szeged.inf.fog.simulator.providers.*;
 import hu.u_szeged.inf.fog.simulator.util.MicrocontrollerPowerTransitionGenerator;
+import hu.vio.simulator.predictor.ArimaPredictor;
+import hu.vio.simulator.predictor.Predictor;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -24,7 +26,8 @@ import java.util.Map;
 
 public class DataRegressionTesterScenario {
 
-    public static ComputeNodeManager computeNodeManager = new ComputeNodeManager(true);
+    public static ComputeNodeManager computeNodeManager = new ComputeNodeManager(false);
+    public static Predictor predictor = new Predictor(new ArimaPredictor());
 
     public static void main(String[] args) throws Exception {
         Utils.cleanAndCreateDirectory(Utils.getRoot() + "/nodes/tmp");
@@ -52,7 +55,9 @@ public class DataRegressionTesterScenario {
             .put("arc1_memory", 4294967296L)
             .put("arc2_memory", 4294967296L)
 
-            .put("disksize", 1073741824L);
+            .put("disksize", 1073741824L)
+
+            .put("predictor", predictor.getName());
 
         config.print();
         config.saveConfig(Utils.getRoot() + "/nodes/tmp/config.xml");

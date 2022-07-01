@@ -386,6 +386,7 @@ public class Application extends Timed {
      * You cannot start a simulation with unknown strategy.
      */
     private void strategy(long unprocessedData) {
+        DataRegressionTesterScenario.predictor.predict();
         if (this.strategy.equals("random")) {
             new RandomApplicationStrategy(this, unprocessedData);
         } else if (this.strategy.equals("hold")) {

@@ -122,6 +122,10 @@ public class ComputeNodeManager {
             return;
         }*/
 
+        if (data.getMachine().id == 2) {
+            DataRegressionTesterScenario.predictor.getAbstractPredictor().addData(data);
+        }
+
         if (verbose) {
             data.print();
         }
