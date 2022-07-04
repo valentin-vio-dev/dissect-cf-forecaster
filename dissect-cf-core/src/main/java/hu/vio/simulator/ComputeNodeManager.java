@@ -116,13 +116,7 @@ public class ComputeNodeManager {
      * Adds one compute node data to data the list.
      */
     public void add(ComputeNodeData data) {
-        /*if (this.computeNodeDataList.size() > 25000) {
-            exportAll(Utils.getRoot() + "/nodes/tmp");
-            System.exit(1225);
-            return;
-        }*/
-
-        if (data.getMachine().id == 2) {
+        if (data.getMachine().id == 0) {
             DataRegressionTesterScenario.predictor.getAbstractPredictor().addData(data);
         }
 

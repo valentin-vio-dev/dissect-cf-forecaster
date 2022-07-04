@@ -10,6 +10,7 @@ public class ProphetPredictor extends AbstractPredictor {
 
     @Override
     public List<Double> predict(Predictor predictor) {
+        predictor.send();
         return null;
     }
 

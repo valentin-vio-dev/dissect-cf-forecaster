@@ -1,55 +1,41 @@
 package hu.vio.simulator.predictor;
 
-import hu.vio.simulator.ComputeNodeData;
-import hu.vio.simulator.Feature;
-import hu.vio.simulator.Utils;
+import hu.vio.simulator.Logger;
+import hu.vio.simulator.SocketClient;
+import org.json.JSONObject;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.sql.*;
 import java.util.List;
 
 public class Predictor {
     private final AbstractPredictor abstractPredictor;
-    private final String SCRIPT_PATH = Utils.getRoot() + "/dissect-cf-core/src/main/java/hu/vio/simulator/predictor/python/main.py";
+    private SocketClient client;
+    private final int chunkSize;
+    private final int smooth;
 
-    public Predictor(AbstractPredictor abstractPredictor) {
+    public Predictor(AbstractPredictor abstractPredictor, int chunkSize, int smooth) {
         this.abstractPredictor = abstractPredictor;
-        this.createDatabaseTablesIfNeeded();
+        this.chunkSize = chunkSize;
+        this.smooth = smooth;
+        this.connect();
     }
 
-    private void clearDatabaseTables() {
-        Connection connection = null;
+    private void connect() {
+        client = new SocketClient();
         try {
-            connection = connect();
-
-            Statement stmt_clear = connection.createStatement();
-            stmt_clear.execute("DELETE FROM Data");
-
-            Statement stmt_clear2 = connection.createStatement();
-            stmt_clear2.execute("DELETE FROM Pred");
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
-        } finally {
-            if (connection != null) {
-                try {
-                    connection.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            }
+            client.startConnection("127.0.0.1", 65432);
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.exit(1);
         }
     }
 
     public List<Double> predict() {
-        System.out.println("Called Predictor... (" + abstractPredictor.getHistory().size() + ")");
-        if (abstractPredictor.getHistory().size() >= 256) {
-            this.exportHistory();
+        Logger.log("Collects", String.valueOf(abstractPredictor.getHistory().size()), "(" + chunkSize + ")");
+        if (abstractPredictor.getHistory().size() >= chunkSize) {
+            Logger.log("Data sent!");
             List<Double> data = abstractPredictor.predict(this);
-            clearDatabaseTables();
             abstractPredictor.clearHistory();
-            System.out.println("Exported data!");
         }
 
         return null;
@@ -59,92 +45,40 @@ public class Predictor {
         return abstractPredictor.getName();
     }
 
-    public void executeScript() {
-        String fetching = "python -W ignore " + SCRIPT_PATH + " --predictor=" + abstractPredictor.getName() + " --train_size=0.75 --smooth=20";
-        String[] commandToExecute = new String[]{ "cmd.exe", "/c", fetching };
-        Process process = null;
+    public void send() {
+        double[] data = new double[abstractPredictor.getHistory().size()];
+        for (int i = 0; i < abstractPredictor.getHistory().size(); i++) {
+            double d = (Double) abstractPredictor.getHistory().get(i).getFeatureList().get(4).data;
+            data[i] = d;
+        }
+
+        JSONObject json = new JSONObject();
+        json.put("predictor", abstractPredictor.getName());
+        json.put("train_size", 0.75);
+        json.put("smooth", smooth);
+        json.put("chunk_size", chunkSize);
+        json.put("data", data);
+        json.put("data_size", data.length);
 
         try {
-            process = Runtime.getRuntime().exec(commandToExecute);
-            process.waitFor();
-
-            BufferedReader inputStream = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            BufferedReader errorStream = new BufferedReader(new InputStreamReader(process.getErrorStream()));
-            String line;
-
-            while ((line = inputStream.readLine()) != null) {
-                System.err.println(line);
-            }
-
-            inputStream.close();
-
-            while ((line = errorStream.readLine()) != null) {
-                System.err.println(line);
-            }
-
-            errorStream.close();
-
-            process.waitFor();
-
-        } catch (IOException | InterruptedException e) {
+            Logger.log("Data:", json.toString());
+            long startTime = System.currentTimeMillis();
+            String responseString = client.sendMessage(json.toString());
+            JSONObject responseJSON = new JSONObject(responseString);
+            long endTime = System.currentTimeMillis();
+            Logger.log("Result:", responseJSON.toString());
+            Logger.log("Exc. time:", (endTime - startTime) + " millis");
+        } catch (Exception e) {
             e.printStackTrace();
-        } finally {
-            if (process != null) {
-                process.destroy();
-            }
         }
     }
 
-    private Connection connect() throws SQLException {
-        String url = "jdbc:sqlite:" + Utils.getRoot() + "/dissect-cf-core/src/main/java/hu/vio/simulator/predictor/python/pred_database.db";
-        return DriverManager.getConnection(url);
+    public int getChunkSize() {
+        return chunkSize;
     }
 
-    private void createDatabaseTablesIfNeeded() {
-        Connection connection = null;
-        try {
-            connection = connect();
-            Statement stmt = connection.createStatement();
-            stmt.execute("CREATE TABLE IF NOT EXISTS Data(id INTEGER PRIMARY KEY AUTOINCREMENT, data TEXT);");
-
-            Statement stmt2 = connection.createStatement();
-            stmt2.execute("CREATE TABLE IF NOT EXISTS Pred(id INTEGER PRIMARY KEY AUTOINCREMENT, data TEXT);");
-
-            clearDatabaseTables();
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
-        } finally {
-            if (connection != null) {
-                try {
-                    connection.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-    }
-
-    public void exportHistory() {
-        Connection connection = null;
-
-        try{
-            connection = connect();
-            for (ComputeNodeData data: abstractPredictor.getHistory()) {
-                PreparedStatement pstmt = connection.prepareStatement("INSERT INTO Data(data) VALUES(?);");
-                pstmt.setString(1, ComputeNodeData.getColumns() + "=" + data.toString());
-                pstmt.executeUpdate();
-            }
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
-        } finally {
-            if (connection != null) {
-                try {
-                    connection.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
+    public int getSmooth() {
+        return smooth;
     }
 
     public AbstractPredictor getAbstractPredictor() {

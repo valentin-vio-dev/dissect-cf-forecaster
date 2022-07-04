@@ -10,7 +10,7 @@ public class ArimaPredictor extends AbstractPredictor {
 
     @Override
     public List<Double> predict(Predictor predictor) {
-        predictor.executeScript();
+        predictor.send();
         return null;
     }
 

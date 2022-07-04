@@ -127,4 +127,8 @@ public class ComputeNodeData {
         result.deleteCharAt(result.length() - 1);
         return result.toString();
     }
+
+    public List<Feature> getFeatureList() {
+        return featureList;
+    }
 }
