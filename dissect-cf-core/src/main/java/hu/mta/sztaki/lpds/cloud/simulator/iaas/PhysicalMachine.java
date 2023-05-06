@@ -78,7 +78,7 @@ import hu.mta.sztaki.lpds.cloud.simulator.util.PowerTransitionGenerator;
  *         MTA SZTAKI (c) 2012"
  */
 public class PhysicalMachine extends MaxMinProvider implements VMManager<PhysicalMachine, ResourceConstraints> {
-	public static int gid = 0;
+	public static int GID = 0;
 	public int id;
 
 	/**
@@ -828,7 +828,7 @@ public class PhysicalMachine extends MaxMinProvider implements VMManager<Physica
 		offTransition = new double[switchoffOperations.length];
 		offDelayEstimate = prepareTransitionalTasks(false, switchoffOperations);
 
-		this.id = gid++;
+		this.id = PhysicalMachine.GID++;
 
 		try {
 			setState(State.OFF);
@@ -1570,5 +1570,9 @@ public class PhysicalMachine extends MaxMinProvider implements VMManager<Physica
 	 */
 	public void setSecure(boolean secureExtensions) {
 		this.secureExtensions = secureExtensions;
+	}
+
+	public int getId() {
+		return id;
 	}
 }

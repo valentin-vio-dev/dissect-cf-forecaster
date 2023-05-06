@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import pandas as pd
-from utils import Utils
-from prophet import Prophet
+from thesis.layers.predictor.utils import Utils
+#from fbprophet import Prophet
 
 
 class ProphetPredictor:
@@ -23,7 +23,7 @@ class ProphetPredictor:
             dates.append(end_date)
         dataframe_processed["ds"] = dates
 
-        model = Prophet()
+        model = {}#Prophet()
         model.fit(dataframe_processed)
         future_dates = model.make_future_dataframe(periods=len(self._test.index))
         result = model.predict(future_dates)
@@ -34,19 +34,35 @@ class ProphetPredictor:
         self.save_plot(prediction)
         return prediction["data"].to_list()
 
-    def save_plot(self, prediction):
-        plt.plot(self._original["data"], color="lightgray", label="Original")
-        plt.plot(self._train["data"], color="b", label="Train")
-        plt.plot(self._test["data"], color="r", label="Test")
-        plt.plot(prediction["data"], color="g", label="Prediction", linestyle="dashed")
-        plt.axvline(x=len(self._train["data"]), color="black")
 
-        plt.legend(loc="upper left")
-        plt.grid()
 
-        plt.savefig(Utils.create_and_get_output_directory("prophet") + "/" + Utils.get_current_date())
+from thesis.layers.predictor.predictors.i_predictor import IPredictor
+from fbprophet import Prophet
 
-        plt.clf()
+class ProphetPredictor(IPredictor):
+    def __init__(self, config, feature_data_list):
+        super().__init__("ARIMA", config, feature_data_list)
 
-    def name(self):
-        return "PROPHET"
+    def make_prediction(self, config, train, test):
+        model = Prophet()
+        model.fit(train)
+        future = model.make_future_dataframe(periods=365)
+        model.predict(future)
+
+        model = ARIMA(
+            train["data"].values,
+            order=(
+                config["hyperParameters"]["arima-p_value"],
+                config["hyperParameters"]["arima-d_value"],
+                config["hyperParameters"]["arima-q_value"]
+            )
+        )
+        fitted = model.fit()
+        result = fitted.forecast(
+            len(test.index),
+            alpha=config["hyperParameters"]["arima-alpha"]
+        )
+        prediction = test.copy()
+        prediction["data"] = result
+
+        return prediction

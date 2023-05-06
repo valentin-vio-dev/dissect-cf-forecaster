@@ -1,37 +1,35 @@
-import matplotlib.pyplot as plt
+import numpy as np
 from statsmodels.tsa.arima.model import ARIMA
-from utils import Utils
+from thesis.layers.predictor.predictors.i_predictor import IPredictor
+import tensorflow as tf
 
 
-class ArimaPredictor:
-    def __init__(self, train, test, original):
-        self._train = train
-        self._test = test
-        self._original = original
+class ArimaPredictor(IPredictor):
+    def __init__(self, config, feature_data_list):
+        super().__init__("ARIMA", config, feature_data_list)
 
-    def predict(self):
-        model = ARIMA(self._train["data"].values, order=(2, 0, 0))
+    def prepare_data(self, data, windows_size):
+        X, y = [], []
+        for i in range(len(data) - windows_size):
+            X.append(data[i:i + windows_size])
+            y.append(data[i + windows_size])
+        return np.array(X), np.array(y)
+
+    def make_prediction(self, config, train, test):
+        model = ARIMA(
+            train["data"].values,
+            order=(
+                config["hyperParameters"]["arima-p_value"],
+                config["hyperParameters"]["arima-d_value"],
+                config["hyperParameters"]["arima-q_value"]
+            )
+        )
         fitted = model.fit()
-        result = fitted.forecast(len(self._test.index), alpha=0.05)
-        prediction = self._test.copy()
+        result = fitted.forecast(
+            len(test.index),
+            alpha=config["hyperParameters"]["arima-alpha"]
+        )
+        prediction = test.copy()
         prediction["data"] = result
 
-        self.save_plot(prediction)
-        return prediction["data"].to_list()
-
-    def save_plot(self, prediction):
-        plt.plot(self._original["data"], color="lightgray", label="Original")
-        plt.plot(self._train["data"], color="b", label="Train")
-        plt.plot(self._test["data"], color="r", label="Test")
-        plt.plot(prediction["data"], color="g", label="Prediction", linestyle="dashed")
-        plt.axvline(x=len(self._train["data"]), color="black")
-
-        plt.legend(loc="upper left")
-        plt.grid()
-
-        plt.savefig(Utils.create_and_get_output_directory("arima") + "/" + Utils.get_current_date())
-
-        plt.clf()
-
-    def name(self):
-        return "ARIMA"
+        return prediction

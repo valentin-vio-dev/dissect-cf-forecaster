@@ -1,25 +1,39 @@
-from scipy.signal import lfilter
 import pandas as pd
+import numpy as np
+from sklearn import preprocessing
 
 
 class Preprocessor:
 
     @staticmethod
-    def process(data, chunk_size=256, smooth=20, drop_overflow=True):
+    def process(data, chunk_size=256, smooth=20, drop_overflow=True, scale=True):
         timestamp = [i for i in range(0, len(data))]
 
         data_obj = {"data": data, "timestamp": timestamp}
         dataframe = pd.DataFrame(data_obj)
 
         if smooth > 0:
-            n = smooth
-            b = [1.0 / n] * n
-            a = 1
-            dataframe["data"] = lfilter(b, a, dataframe["data"].values)
+            dataframe["data"] = Preprocessor.smooth_data(dataframe["data"].values, smooth)
 
         if drop_overflow:
             if len(dataframe["data"]) > chunk_size:
                 dataframe = dataframe.iloc[-chunk_size:]
 
+        if scale:
+            scaler = preprocessing.MinMaxScaler(feature_range=(0, 1))
+            normed = scaler.fit_transform(np.array(dataframe["data"]).reshape(-1, 1))
+
+            # the output is an array of arrays, so tidy the dimensions
+            #dataframe["data"] = [round(i[0], 2) for i in normed]
+            dataframe["data"] = [i[0] for i in normed]
+
         dataframe.reset_index(drop=True, inplace=True)
         return dataframe
+
+    @staticmethod
+    def smooth_data(data, smooth):
+        tmp = data.copy()
+        for s in range(0, smooth):
+            for i in range(1, len(tmp) - 1):
+                tmp[i] = (tmp[i - 1] + tmp[i + 1]) / 2
+        return tmp

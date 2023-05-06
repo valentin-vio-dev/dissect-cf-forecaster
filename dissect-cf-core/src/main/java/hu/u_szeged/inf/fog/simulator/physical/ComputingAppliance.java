@@ -7,6 +7,7 @@ import java.util.Map;
 import hu.mta.sztaki.lpds.cloud.simulator.Timed;
 import hu.mta.sztaki.lpds.cloud.simulator.energy.specialized.IaaSEnergyMeter;
 import hu.mta.sztaki.lpds.cloud.simulator.iaas.IaaSService;
+import hu.mta.sztaki.lpds.cloud.simulator.iaas.PhysicalMachine;
 import hu.mta.sztaki.lpds.cloud.simulator.iaas.VirtualMachine;
 import hu.mta.sztaki.lpds.cloud.simulator.util.CloudLoader;
 import hu.u_szeged.inf.fog.simulator.application.Application;
@@ -20,6 +21,9 @@ import hu.u_szeged.inf.fog.simulator.loaders.NeigboursModel;
  * This service is utilized by IoT applications.
  */
 public class ComputingAppliance {
+
+    public static int GID = 0;
+    public int id;
 
     /**
      * A list for collecting all generated objects so far.
@@ -92,6 +96,7 @@ public class ComputingAppliance {
         this.range = range;
         this.readEnergy = readEnergy;
         ComputingAppliance.allComputingAppliance.add(this);
+        this.id = PhysicalMachine.GID++;
     }
 
     /**
@@ -245,4 +250,7 @@ public class ComputingAppliance {
         }
     }
 
+    public int getId() {
+        return id;
+    }
 }

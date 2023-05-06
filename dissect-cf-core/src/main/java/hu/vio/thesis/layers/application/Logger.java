@@ -1,17 +1,14 @@
-package hu.vio.thesis;
+package hu.vio.thesis.layers.application;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-/**
- * Class for better console logs.
- * @author valentin-vio
- */
 final public class Logger {
     static final DateTimeFormatter DTF = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
 
     public static void log(String text) {
-        System.out.println("[" + DTF.format(LocalDateTime.now()) + "]\t" + text);
+        String message = "[" + DTF.format(LocalDateTime.now()) + "]\t" + text;
+        System.out.println(message);
     }
 
     public static void log(String... texts) {
@@ -55,9 +52,9 @@ final public class Logger {
         System.out.print("\n");
     }
 
-    public static void line(int numOfentities, int length) {
+    public static void line(int numOfEntities, int length) {
         StringBuilder builder = new StringBuilder("");
-        for (int i=0; i<numOfentities; i++) {
+        for (int i=0; i<numOfEntities; i++) {
             for (int j=0; j<length; j++) {
                 builder.append(".");
             }

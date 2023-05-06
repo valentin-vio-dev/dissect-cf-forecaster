@@ -1,117 +1,80 @@
-from os import listdir
-from os.path import isfile, join
-import pandas as pd
-from preprocessor import Preprocessor
+import traceback
+
 import numpy as np
-import math
+import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
-from keras.models import Sequential
-from keras.layers import Dense, LSTM
-import matplotlib.pyplot as plt
 
-# 400 - 300 train, 100 test
+from thesis.layers.predictor.preprocessor import Preprocessor
+from thesis.layers.predictor.utils import Utils
 
-CHUNK_SIZE = 400
-SMOOTH = 20
-TRAIN_DATASET_DIR = "D:/_dev/vio/dissect-cf/dissect-cf-core/src/main/java/hu/vio/simulator/predictor/python/train_dataset"
-MODEL = None
-TRAIN_SIZE = 0.75
+import tensorflow as tf
+import json
 
 
-def load_and_preprocess_dataset(path):
-    files = [f for f in listdir(path) if isfile(join(path, f)) and f.split(".")[-1] == "csv"]
-    result = []
+#{'datasetLocation': 'D:/dev/dataset.csv', 'modelOutput': 'D:/model.h5', 'windowSize': 50, 'smoothing': 20, 'epochs': 10, 'optimizer': 'adam', 'lossFunction': 'mse', 'feature': 'memory'}
+class LTSMTrainer:
+    def __init__(self, config):
+        self.config = config
+        self.dataframe = None
+        self.X_train = None
+        self.y_train = None
+        self.model = None
 
-    for file in files:
-        """file_name = file.split(".")[0]
-        dataframe = pd.read_csv("{}\\{}".format(path, file), sep=";")
-        data = dataframe["Tester"].apply(lambda x: str(x).replace(",", ".")).astype(float).tolist()
-        data = np.array(data).reshape(-1, 1)
+    def load_dataset(self):
+        df = pd.read_csv(self.config["datasetLocation"], sep=";")
+        df = df.drop(df.columns.difference([self.config["feature"]]), 1, inplace=False)
+        df[self.config["feature"]] = df[self.config["feature"]].apply(Utils.replace_commas).astype(float).tolist()
+        df[self.config["feature"]] = df[self.config["feature"]].apply(Utils.replace_commas).astype(float).tolist()
+        df[self.config["feature"]] = Preprocessor.smooth_data(df[self.config["feature"]].values, self.config["smoothing"])
+        df = df.rename(columns={self.config["feature"]: 'data'})
 
-        result.append({
-            "name": file_name,
-            "data": data
-        })"""
+        data = df["data"].values
+        timestamp = [i for i in range(0, len(data))]
+        dataframe = pd.DataFrame({"value": data}, index=timestamp)
 
-        file_name = file.split(".")[0]
-        dataframe = pd.read_csv("{}\\{}".format(path, file), sep=";")
-        dataframe = dataframe.filter(["Tester"])
-        dataframe = dataframe["Tester"].apply(lambda x: str(x).replace(",", ".")).astype(float)
-        data = np.array(dataframe.to_list()).reshape(-1, 1)
+        sc = MinMaxScaler(feature_range=(0, 1))
+        dataframe = sc.fit_transform(dataframe.to_numpy())
+        dataframe = pd.DataFrame(dataframe, columns=["value"])
 
-        result.append({
-            "name": file_name,
-            "data": data,
-            "dataframe": dataframe
-        })
+        self.dataframe = dataframe
 
-    return result
+    def make_data_to_window(self, data, windows_size):
+        X, y = [], []
+        for i in range(len(data) - windows_size):
+            X.append(data[i:i + windows_size])
+            y.append(data[i + windows_size])
+        return np.array(X), np.array(y)
 
+    def prepare_data(self):
+        self.X_train, self.y_train = self.make_data_to_window(self.dataframe["value"].values, self.config["windowSize"])
 
-def train_model(datasets):
-    model = Sequential()
-    model.add(LSTM(50, return_sequences=True, input_shape=(CHUNK_SIZE, 1)))
-    model.add(LSTM(50, return_sequences=False))
-    model.add(Dense(25))
-    model.add(Dense(1))
+    def set_model(self):
+        model = tf.keras.models.Sequential()
+        model.add(tf.keras.layers.LSTM(units=50, return_sequences=True, input_shape=(self.config["windowSize"], 1)))
+        model.add(tf.keras.layers.Dropout(0.2))
+        model.add(tf.keras.layers.LSTM(units=50, return_sequences=True))
+        model.add(tf.keras.layers.Dropout(0.2))
+        model.add(tf.keras.layers.LSTM(units=50, return_sequences=True))
+        model.add(tf.keras.layers.Dropout(0.2))
+        model.add(tf.keras.layers.LSTM(units=50))
+        model.add(tf.keras.layers.Dropout(0.2))
+        model.add(tf.keras.layers.Dense(units=1))
+        model.summary()
+        self.model = model
 
-    for ds in datasets:
-        # Scale
-        scaler = MinMaxScaler(feature_range=(0, 1))
-        scaled_data = scaler.fit_transform(ds["data"])
+    def start_training(self):
+        self.model.compile(optimizer=self.config["optimizer"], loss=self.config["lossFunction"])
+        self.model.fit(self.X_train, self.y_train, epochs=self.config["epochs"], verbose=1)
 
-        # Train dataset
-        train = scaled_data[0:math.ceil(len(scaled_data) * TRAIN_SIZE), :]
-        x_train = []
-        y_train = []
-        for i in range(CHUNK_SIZE, len(train)):
-            x_train.append(train[(i - CHUNK_SIZE):i, 0])
-            y_train.append(train[i, 0])
-        x_train, y_train = np.array(x_train), np.array(y_train)
+    def save_model(self):
+        self.model.save(self.config["modelOutput"])
+        path = Utils.replace_all(self.config["modelOutput"], "\\", "/")
+        path = path.split("/")[0:-1]
+        path = "/".join(path)
 
-        # Test dataset
-        test = scaled_data[math.ceil(len(scaled_data) * TRAIN_SIZE) - CHUNK_SIZE:, :]
-        x_test = []
-        y_test = ds["data"][math.ceil(len(scaled_data) * TRAIN_SIZE):, :]
-        for i in range(CHUNK_SIZE, len(test)):
-            x_test.append(test[(i - CHUNK_SIZE):i, 0])
-        x_test = np.array(x_test)
-        x_test = np.reshape(x_test, (x_test.shape[0], x_test.shape[1], 1))
-
-        # Fit model
-        model.compile(optimizer="adam", loss="mean_squared_error")
-        model.fit(x_train, y_train, batch_size=1, epochs=1)
-
-        # Prediction
-        prediction = model.predict(x_test)
-        prediction = scaler.inverse_transform(prediction)
-
-        train = ds["dataframe"][:math.ceil(len(scaled_data) * TRAIN_SIZE)]
-        test = ds["dataframe"][math.ceil(len(scaled_data) * TRAIN_SIZE):]
-        prediction = pd.Series(prediction.flatten())
-        prediction.index = test.index
-
-        # Plot
-        plt.plot(train, color="b", label="Train")
-        plt.plot(test, color="r", label="Test")
-        plt.plot(prediction, color="g", label="Prediction", linestyle="dashed")
-
-        plt.legend(loc="upper left")
-        plt.grid()
-        plt.show()
-
-    #model.save("gdrive/My Drive/train_dataset/my_model.h5")
-
-
-
-def save_model(model):
-    pass
-
-
-def main():
-    datasets = load_and_preprocess_dataset(TRAIN_DATASET_DIR)
-    MODEL = train_model([datasets[0]])
-    #save_model(model)
-
-
-main()
+        try:
+            json_object = json.dumps(self.config)
+            with open(path + "/model_config.json", "w") as f:
+                f.write(json_object)
+        except Exception as e:
+            traceback.print_exc()

@@ -1,7 +1,7 @@
 import math
 import os
 from datetime import datetime
-
+from pathlib import Path
 
 class Utils:
 
@@ -28,3 +28,27 @@ class Utils:
     @staticmethod
     def get_current_date():
         return datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+
+    @staticmethod
+    def trim_str(text, max_size):
+        return text[0:max_size] + "..." if len(text) > max_size else text
+
+    @staticmethod
+    def create_repostory(path):
+        Path(path).mkdir(parents=True, exist_ok=True)
+        Path(path + '/images').mkdir(parents=True, exist_ok=True)
+        Path(path + '/config').mkdir(parents=True, exist_ok=True)
+        Path(path + '/dataset').mkdir(parents=True, exist_ok=True)
+
+
+    @staticmethod
+    def replace_commas(cell):
+        return str(cell).replace(",", ".")
+
+    @staticmethod
+    def replace_all(s, c, t):
+        result = s
+        while c in result:
+            result = result.replace(c, t)
+        return result
+

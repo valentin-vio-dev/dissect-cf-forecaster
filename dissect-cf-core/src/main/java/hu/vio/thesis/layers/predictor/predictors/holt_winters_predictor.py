@@ -1,12 +1,15 @@
 import pandas as pd
+from sktime.forecasting.base import ForecastingHorizon
+from sktime.forecasting.naive import NaiveForecaster
+from sktime.forecasting.theta import ThetaForecaster
 from statsmodels.tsa.holtwinters import SimpleExpSmoothing, Holt, ExponentialSmoothing
 import plotly.graph_objects as go
 from scipy.signal import lfilter
 
-
+from thesis.layers.predictor.predictors.i_predictor import IPredictor
 from thesis.layers.predictor.utils import Utils
 
-dataframe = pd.read_csv("D:\dev\dissect-cf\dissect-cf-core\src\main\java\hu/vio/thesis/layers\predictor/dataset/CA_Kecskemet_Airport.csv", sep=";")
+"""dataframe = pd.read_csv("D:\dev\dissect-cf\dissect-cf-core\src\main\java\hu/vio/thesis/layers\predictor/dataset/CA_Kecskemet_Airport.csv", sep=";")
 dataframe = dataframe[5000:5000+256]
 
 def replace_commas(cell):
@@ -17,7 +20,7 @@ def plot_func(forecast1: list[float],
               forecast2: list[float],
               forecast3: list[float],
               title: str) -> None:
-    """Function to plot the forecasts."""
+    Function to plot the forecasts.
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=train['TIME'], y=train['LOAD_OF_RESOURCE'], name='Train'))
     fig.add_trace(go.Scatter(x=test['TIME'], y=test['LOAD_OF_RESOURCE'], name='Train'))
@@ -64,4 +67,31 @@ forecasts_holt_winters = model_holt_winters.forecast(len(test))
 
 
 
-plot_func(forecasts_simple, forecasts_holt, forecasts_holt_winters,  "Holt-Winters Exponential Smoothing")
+plot_func(forecasts_simple, forecasts_holt, forecasts_holt_winters,  "Holt-Winters Exponential Smoothing")"""
+
+
+class HoltWintersPredictor(IPredictor):
+    def __init__(self, config, feature_data_list):
+        super().__init__("HOLT_WINTERS", config, feature_data_list)
+
+    def make_prediction(self, config, train, test):
+        model_holt_winters = ExponentialSmoothing( # Holt Winter's Exponential Smoothing
+            train["data"],
+            trend=config["hyperParameters"]["holt_winters-trend"],
+            seasonal=config["hyperParameters"]["holt_winters-seasonal"],
+            seasonal_periods=config["hyperParameters"]["holt_winters-seasonal_periods"],
+        ).fit(optimized=True)
+        forecasts_holt_winters = model_holt_winters.forecast(len(test))
+
+        prediction = test.copy()
+        prediction["data"] = forecasts_holt_winters.values
+
+        fh = ForecastingHorizon(test.index, is_relative=False)
+        forecaster = NaiveForecaster(strategy="mean", sp=60)
+        forecaster.fit(train["data"])
+        y_pred = forecaster.predict(fh)
+
+        prediction = test.copy()
+        prediction["data"] = y_pred.values
+
+        return prediction

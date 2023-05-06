@@ -1,4 +1,4 @@
-package hu.vio.thesis;
+package hu.vio.thesis.layers.application;
 
 import hu.mta.sztaki.lpds.cloud.simulator.Timed;
 import hu.mta.sztaki.lpds.cloud.simulator.energy.powermodelling.PowerState;
@@ -18,113 +18,70 @@ import hu.u_szeged.inf.fog.simulator.physical.ComputingAppliance;
 import hu.u_szeged.inf.fog.simulator.physical.MicroController;
 import hu.u_szeged.inf.fog.simulator.providers.*;
 import hu.u_szeged.inf.fog.simulator.util.MicrocontrollerPowerTransitionGenerator;
-import hu.vio.thesis.predictors.ArimaPredictor;
-import hu.vio.thesis.predictors.Predictor;
+import hu.vio.thesis.layers.application.refactored.MessageProtocol;
+import hu.vio.thesis.layers.application.refactored.SocketClient;
+import hu.vio.thesis.layers.application.refactored.predictors.Predictor;
+import hu.vio.thesis.layers.application.refactored.Feature;
+import hu.vio.thesis.layers.application.refactored.FeatureManager;
 
-import java.util.ArrayList;
-import java.util.EnumMap;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class MainScenario {
 
-    public static ComputingNodesHandler computingNodesHandler = new ComputingNodesHandler(false);
-    public static Predictor predictor = new ArimaPredictor(256, 20, 0.75);
-    public static FeatureHandler featureHandler = new FeatureHandler();
-
     public static void main(String[] args) throws Exception {
-        Utils.cleanAndCreateDirectory(Utils.getRoot() + "/dissect-cf-core/src/main/java/hu/vio/simulator/predictor/tmp");
+        Args.setArgs(args); // Needs to be right after the main entry point.
+        /*
+         * Example args: predictor="arima" chunkSize="256" trainSize="0.75" smoothing="20" hyperParameters="{'arima-p_value': 2, 'arima-d_value': 0, 'arima-q_value': 0, 'arima-alpha': 0.05}" host="127.0.0.1" port="65432" outputLocation="D:/dev/test" saveDataset="False" saveStandalone="False" saveDatasetImage="False" variableConfig="{'node_range_cloud': 500000, 'node_range_fog': 10000, 'app_freq': 300000, 'task_size': 26214400, 'count_of_inst': 12000, 'threshold': 1, 'va_startup_process': 100, 'va_req_disk': 1073741824, 'fog_strategy_1': 'load', 'fog_strategy_2': 'push', 'arc1_cpu': 8, 'arc2_cpu': 4, 'arc1_processing': 1e-05, 'arc2_processing': 1e-05, 'arc1_memory': 4294967296, 'arc2_memory': 4294967296, 'disk_size': 1073741824}" saveConfig="False" pred_id="0"
+         */
 
-        SocketClient client = new SocketClient();
-        predictor.startConnection(client);
-        predictor.setComputingNodesHandler(computingNodesHandler);
-
-        Config config = new Config()
-            .put("node_range_cloud", 500 * 1000)
-            .put("node_range_fog", 100 * 1000)
-            .put("app_freq", 60 * 1000 * 5)
-            .put("task_size", 262144 * 100)
-            .put("count_of_inst", 12000)
-            .put("threshold", 1)
-            .put("va_startup_process", 100)
-            .put("va_req_disk", 1073741824L)
-            .put("fog_strategy_1", "load")
-            .put("fog_strategy_2", "push")
-            .put("arc1_cpu", 8)
-            .put("arc2_cpu", 4)
-            .put("arc1_processing", 0.001 / 100)
-            .put("arc2_processing", 0.001 / 100)
-            .put("arc1_memory", 4294967296L)
-            .put("arc2_memory", 4294967296L)
-            .put("disk_size", 1073741824L)
-            .put("chunk_size", predictor.getChunkSize())
-            .put("smooth", predictor.getSmooth())
-            .put("predictor", predictor.getName());
-
+        Config config = new Config(Args.get("variableConfig"));
         config.print();
-        config.saveConfig(Utils.getRoot() + "/dissect-cf-core/src/main/java/hu/vio/simulator/predictor/tmp/config.json");
 
-        //featureHandler.addFeature("Name", (computingNode) -> computingNode.getComputingAppliance().name);
+        SocketClient socketClient = new SocketClient(
+                Args.get("host", "127.0.0.1"),
+                Integer.parseInt(Args.get("port", "65432"))
+        );
 
-        featureHandler.addFeature(Utils.makeUniformIDString("Memory"), (computingNode) -> {
-            double result = 0.0;
-            for (PhysicalMachine physicalMachine: computingNode.getComputingAppliance().iaas.machines) {
-                for (VirtualMachine vm: physicalMachine.listVMs()) {
-                    if (vm.getResourceAllocation() != null) {
-                        result += vm.getResourceAllocation().allocated.getRequiredMemory();
-                    }
-                }
-            }
-            return result;
-        });
+        try {
+            socketClient.startConnection();
+            socketClient.send(new MessageProtocol(MessageProtocol.Command.LOG, "socket-started", "Connection has been established!"));
+            Logger.log("Connection has been established!");
+        } catch (Exception e) {
+            Logger.log("Connection has not been established!");
+        }
 
-        featureHandler.addFeature(Utils.makeUniformIDString("Load of resource"), (computingNode) -> {
-            double result = 0.0;
-            for (PhysicalMachine physicalMachine: computingNode.getComputingAppliance().iaas.machines) {
-                for (VirtualMachine vm: physicalMachine.listVMs()) {
-                    if (vm.getResourceAllocation() != null) {
-                        result += vm.getResourceAllocation().allocated.getRequiredCPUs();
-                    }
-                }
-            }
-            return result;
-        });
+        Predictor predictor = Predictor.getInstance();
+        predictor.setSocketClient(socketClient);
 
-        featureHandler.addFeature(Utils.makeUniformIDString("Total proc power"), (computingNode) -> {
-            double result = 0.0;
-            for (PhysicalMachine physicalMachine: computingNode.getComputingAppliance().iaas.machines) {
-                for (VirtualMachine vm: physicalMachine.listVMs()) {
-                    if (vm.getResourceAllocation() != null) {
-                        result += vm.getResourceAllocation().allocated.getRequiredProcessingPower();
-                    }
-                }
-            }
-            return result;
-        });
-
-        computingNodesHandler.setFeatureHandler(featureHandler);
-
+        if (Boolean.parseBoolean(Args.get("saveConfig", "true"))) {
+            config.saveConfigKV(Args.get("outputLocation") + "/config/config.cfg");
+        }
 
         // Resource files
-        String cloudfile = Utils.getRoot() + "/dissect-cf-application/src/main/resources/demo/XML_examples/LPDS_vio.xml";
-        String fogfile = Utils.getRoot() + "/dissect-cf-application/src/main/resources/demo/XML_examples/LPDS_vio.xml";
-
+        String cloudFilePath = "D:/dev/dissect-cf/dissect-cf-application/src/main/resources/demo/XML_examples/LPDS_vio.xml";
+        String fogFilePath = "D:/dev/dissect-cf/dissect-cf-application/src/main/resources/demo/XML_examples/LPDS_vio.xml";
 
         // 1 GB VM image
-        VirtualAppliance va = new VirtualAppliance("va", config.get("va_startup_process", Integer.class), 0, false, config.get("va_req_disk", Long.class));
+        VirtualAppliance va = new VirtualAppliance(
+                "va",
+                config.getInteger("va_startup_process"),
+                0,
+                false,
+                config.getLong("va_req_disk")
+        );
 
 
         // flavors with 4-8 CPU cores, 4 GB memory
         AlterableResourceConstraints arc1 = new AlterableResourceConstraints(
-                config.get("arc1_cpu", Integer.class),
-                config.get("arc1_processing", Double.class),
-                config.get("arc1_memory", Long.class)
+                config.getInteger("arc1_cpu"),
+                config.getDouble("arc1_processing"),
+                config.getLong("arc1_memory")
         ); // 5min
 
         AlterableResourceConstraints arc2 = new AlterableResourceConstraints(
-                config.get("arc2_cpu", Integer.class),
-                config.get("arc2_processing", Double.class),
-                config.get("arc2_memory", Long.class)
+                config.getInteger("arc2_cpu"),
+                config.getDouble("arc2_processing"),
+                config.getLong("arc2_memory")
         ); // 10min
 
 
@@ -135,101 +92,99 @@ public class MainScenario {
 
         // Nodes
         ComputingAppliance fogLFStation = new ComputingAppliance(
-            fogfile,
+            fogFilePath,
             "Liszt Ferenc station",
             new GeoLocation(47.436998252, 19.257165638),
             true,
-            config.get("node_range_fog", Integer.class)
+            config.getInteger("node_range_fog")
         );
 
         ComputingAppliance fogKalocsa = new ComputingAppliance(
-            fogfile,
+            fogFilePath,
             "Kalocsa foktő station",
             new GeoLocation(46.5435333, 18.9430218),
             true,
-            config.get("node_range_fog", Integer.class)
+            config.getInteger("node_range_fog")
         );
 
         ComputingAppliance fogDebrecenIA = new ComputingAppliance(
-            fogfile,
+            fogFilePath,
             "Debrecen International Airport",
             new GeoLocation(47.48666472, 21.60916423),
             true,
-            config.get("node_range_fog", Integer.class)
+            config.getInteger("node_range_fog")
         );
 
         ComputingAppliance fogKecskemetAirport = new ComputingAppliance(
-            fogfile,
+            fogFilePath,
             "Kecskemet Airport",
             new GeoLocation(46.917162998, 19.742830362),
             true,
-            config.get("node_range_fog", Integer.class)
+            config.getInteger("node_range_fog")
         );
 
         ComputingAppliance cloudBudapest = new ComputingAppliance(
-            cloudfile,
+            cloudFilePath,
             "Budapest main",
             new GeoLocation(47.497913, 19.040236),
             true,
-            config.get("node_range_cloud", Integer.class)
+            config.getInteger("node_range_cloud")
         );
-
-        computingNodesHandler.addComputingAppliances(fogLFStation, fogKalocsa, fogDebrecenIA, fogKecskemetAirport, cloudBudapest);
 
 
         // Applications
         Application fogapp1 = new Application(
-            config.get("app_freq", Integer.class),
-            config.get("task_size", Integer.class),
+            config.getInteger("app_freq"),
+            config.getInteger("task_size"),
             "instance2",
             "LF-Station-app",
-            config.get("count_of_inst", Integer.class),
-            config.get("threshold", Integer.class),
-            config.get("fog_strategy_1", String.class),
+            config.getInteger("count_of_inst"),
+            config.getInteger("threshold"),
+            config.getString("fog_strategy_1"),
             true
         );
 
         Application fogapp2 = new Application(
-            config.get("app_freq", Integer.class),
-            config.get("task_size", Integer.class),
+            config.getInteger("app_freq"),
+            config.getInteger("task_size"),
             "instance2",
             "Kalocsa-app",
-            config.get("count_of_inst", Integer.class),
-            config.get("threshold", Integer.class),
-            config.get("fog_strategy_2", String.class),
+            config.getInteger("count_of_inst"),
+            config.getInteger("threshold"),
+            config.getString("fog_strategy_2"),
             true
         );
 
         Application fogapp3 = new Application(
-            config.get("app_freq", Integer.class),
-            config.get("task_size", Integer.class),
+            config.getInteger("app_freq"),
+            config.getInteger("task_size"),
             "instance2",
             "Debrecent-app",
-            config.get("count_of_inst", Integer.class),
-            config.get("threshold", Integer.class),
-            config.get("fog_strategy_1", String.class),
+            config.getInteger("count_of_inst"),
+            config.getInteger("threshold"),
+            config.getString("fog_strategy_1"),
             true
         );
 
         Application fogapp4 = new Application(
-            config.get("app_freq", Integer.class),
-            config.get("task_size", Integer.class),
+            config.getInteger("app_freq"),
+            config.getInteger("task_size"),
             "instance2",
             "Kecskemet-app",
-            config.get("count_of_inst", Integer.class),
-            config.get("threshold", Integer.class),
-            config.get("fog_strategy_2", String.class),
+            config.getInteger("count_of_inst"),
+            config.getInteger("threshold"),
+            config.getString("fog_strategy_2"),
             true
         );
 
         Application cloudapp1 = new Application(
-            config.get("app_freq", Integer.class),
-            config.get("task_size", Integer.class),
+            config.getInteger("app_freq"),
+            config.getInteger("task_size"),
             "instance1",
             "Budapest-app",
-            config.get("count_of_inst", Integer.class),
-            config.get("threshold", Integer.class),
-            config.get("fog_strategy_2", String.class),
+            config.getInteger("count_of_inst"),
+            config.getInteger("threshold"),
+            config.getString("fog_strategy_2"),
             false
         );
 
@@ -240,11 +195,62 @@ public class MainScenario {
         fogKecskemetAirport.addApplication(fogapp4);
         cloudBudapest.addApplication(cloudapp1);
 
+        // Set the features for prediction
+        FeatureManager featureManager = FeatureManager.getInstance();
+        predictor.setFeatureManager(featureManager);
+
+        for (ComputingAppliance computingAppliance: ComputingAppliance.allComputingAppliance) {
+            featureManager.addFeature(new Feature(String.format("%s.%s", computingAppliance.name, "memory"), true) {
+                @Override
+                public double compute() {
+                    double result = 0.0;
+                    for (PhysicalMachine physicalMachine: computingAppliance.iaas.machines) {
+                        for (VirtualMachine vm: physicalMachine.listVMs()) {
+                            if (vm.getResourceAllocation() != null) {
+                                result += vm.getResourceAllocation().allocated.getRequiredMemory();
+                            }
+                        }
+                    }
+                    return result;
+                }
+            });
+
+            featureManager.addFeature(new Feature(String.format("%s.%s", computingAppliance.name, "load_of_resource"), true) {
+                @Override
+                public double compute() {
+                    double result = 0.0;
+                    for (PhysicalMachine physicalMachine: computingAppliance.iaas.machines) {
+                        for (VirtualMachine vm: physicalMachine.listVMs()) {
+                            if (vm.getResourceAllocation() != null) {
+                                result += vm.getResourceAllocation().allocated.getRequiredCPUs();
+                            }
+                        }
+                    }
+                    return result;
+                }
+            });
+
+            featureManager.addFeature(new Feature(String.format("%s.%s", computingAppliance.name, "total_processing_power"), true) {
+                @Override
+                public double compute() {
+                    double result = 0.0;
+                    for (PhysicalMachine physicalMachine: computingAppliance.iaas.machines) {
+                        for (VirtualMachine vm: physicalMachine.listVMs()) {
+                            if (vm.getResourceAllocation() != null) {
+                                result += vm.getResourceAllocation().allocated.getRequiredProcessingPower();
+                            }
+                        }
+                    }
+                    return result;
+                }
+            });
+        }
 
         // Connections and latencies
         fogDebrecenIA.setLatency(fogKalocsa, 7);
         fogLFStation.setLatency(fogKalocsa, 15);
         fogLFStation.setLatency(cloudBudapest, 3);
+
         fogDebrecenIA.setLatency(fogKecskemetAirport, 11);
         fogKecskemetAirport.setLatency(fogKalocsa, 12);
         fogKecskemetAirport.setLatency(fogKecskemetAirport, 9);
@@ -278,7 +284,7 @@ public class MainScenario {
         for (int i = 0; i < 5; i++) {
             for (int j= 0; j < 30; j++) {
                 MicroController mc = new MicroController(1, 0.001, 536870912L,
-                        new Repository(config.get("disk_size", Long.class), "mc", 1562, 1562, 1562, latencyMap, stTransitions, nwTransitions),
+                        new Repository(config.getLong("disk_size"), "mc", 1562, 1562, 1562, latencyMap, stTransitions, nwTransitions),
                         1, 1, cpuTransitions);
 
                 GeoLocation gl = list.get(i);
@@ -322,7 +328,12 @@ public class MainScenario {
 
         Timed.simulateUntilLastEvent();
 
+        if (Boolean.parseBoolean(Args.get("saveDataset", "true"))) {
+            featureManager.exportToCSV(Args.get("outputLocation") + "/dataset/dataset.csv");
+        }
 
-        computingNodesHandler.exportAllToCSV(Utils.getRoot() + "/dissect-cf-core/src/main/java/hu/vio/simulator/predictor/tmp");
+        featureManager.exportToCSV("DATA.csv");
+
+        socketClient.stopConnection();
     }
 }
