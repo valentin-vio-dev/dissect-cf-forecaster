@@ -74,24 +74,15 @@ class HoltWintersPredictor(IPredictor):
     def __init__(self, config, feature_data_list):
         super().__init__("HOLT_WINTERS", config, feature_data_list)
 
+
     def make_prediction(self, config, train, test):
-        model_holt_winters = ExponentialSmoothing( # Holt Winter's Exponential Smoothing
-            train["data"],
-            trend=config["hyperParameters"]["holt_winters-trend"],
-            seasonal=config["hyperParameters"]["holt_winters-seasonal"],
-            seasonal_periods=config["hyperParameters"]["holt_winters-seasonal_periods"],
+        model_holt_winters = Holt( # Holt Winter's Exponential Smoothing
+            endog=train["data"],
+            exponential=(config["hyperParameters"]["holt_winters-trend"] == "mul")
         ).fit(optimized=True)
         forecasts_holt_winters = model_holt_winters.forecast(len(test))
 
         prediction = test.copy()
         prediction["data"] = forecasts_holt_winters.values
-
-        fh = ForecastingHorizon(test.index, is_relative=False)
-        forecaster = NaiveForecaster(strategy="mean", sp=60)
-        forecaster.fit(train["data"])
-        y_pred = forecaster.predict(fh)
-
-        prediction = test.copy()
-        prediction["data"] = y_pred.values
 
         return prediction

@@ -16,7 +16,6 @@ TODO
 - Predictor layer messages refactor
 - UI messages refactor
 - Show current prediction number on UI
-- Calculate error numbers and show on UI
 - Refactor Predictor loggers
 - Close Application layer window
 - LTSM inverscale

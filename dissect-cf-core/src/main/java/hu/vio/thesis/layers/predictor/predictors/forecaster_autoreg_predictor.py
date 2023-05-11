@@ -11,21 +11,12 @@ class ForecasterAutoregPredictor(IPredictor):
         super().__init__("FORECASTER_AUTOREG", config, feature_data_list)
 
     def make_prediction(self, config, train, test):
-        """dates = []
-        start_date = "01/01/1900"
-        for i in range(0, len(train.index)):
-            end_date = pd.to_datetime(start_date) + pd.DateOffset(days=i)
-            end_date = str(end_date).split(" ")[0]
-            dates.append(end_date)
-        train["ds"] = dates"""
-        train = train.rename(columns={"data": "y", "timestamp": "ds"})
-        """train = train.drop("timestamp", axis=1)"""
-
         forecaster = ForecasterAutoreg(
             regressor=RandomForestRegressor(
-                random_state=config["hyperParameters"]["forecaster_autoreg-random_state"]
+                n_estimators=config["hyperParameters"]["random_forest-n_estimators"],
+                max_depth=config["hyperParameters"]["random_forest-max_depth"]
             ),
-            lags=config["hyperParameters"]["forecaster_autoreg-lags"]
+            lags=config["hyperParameters"]["random_forest-lags"]
         )
         forecaster.fit(y=train["y"])
         predictions = forecaster.predict(steps=len(test))

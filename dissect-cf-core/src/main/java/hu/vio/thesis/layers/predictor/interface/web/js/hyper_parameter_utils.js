@@ -26,8 +26,8 @@ const HYPER_PARAMETERS = {
     ],
     holt_winters: [
         { label: 'Trend', value: 'add', type: 'text', hint: 'Values: add, mul' },
-        { label: 'Seasonal', value: 'add', type: 'text', hint: 'Values: add, mul' },
-        { label: 'Seasonal periods', value: '60', type: 'number', min: '0' }
+        /*{ label: 'Seasonal', value: 'add', type: 'text', hint: 'Values: add, mul' },
+        { label: 'Seasonal periods', value: '60', type: 'number', min: '0' }*/
     ],
     ltsm: [
         { label: 'Model location', value: 'D:/dev/dataset', type: 'text', hint: 'Configuration file not found. Train a model in order to predict data!'},

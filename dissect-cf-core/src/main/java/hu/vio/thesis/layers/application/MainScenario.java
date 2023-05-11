@@ -92,100 +92,100 @@ public class MainScenario {
 
         // Nodes
         ComputingAppliance fogLFStation = new ComputingAppliance(
-            fogFilePath,
-            "Liszt Ferenc station",
-            new GeoLocation(47.436998252, 19.257165638),
-            true,
-            config.getInteger("node_range_fog")
+                fogFilePath,
+                "Liszt Ferenc station",
+                new GeoLocation(47.436998252, 19.257165638),
+                true,
+                config.getInteger("node_range_fog")
         );
 
         ComputingAppliance fogKalocsa = new ComputingAppliance(
-            fogFilePath,
-            "Kalocsa foktő station",
-            new GeoLocation(46.5435333, 18.9430218),
-            true,
-            config.getInteger("node_range_fog")
+                fogFilePath,
+                "Kalocsa foktő station",
+                new GeoLocation(46.5435333, 18.9430218),
+                true,
+                config.getInteger("node_range_fog")
         );
 
         ComputingAppliance fogDebrecenIA = new ComputingAppliance(
-            fogFilePath,
-            "Debrecen International Airport",
-            new GeoLocation(47.48666472, 21.60916423),
-            true,
-            config.getInteger("node_range_fog")
+                fogFilePath,
+                "Debrecen International Airport",
+                new GeoLocation(47.48666472, 21.60916423),
+                true,
+                config.getInteger("node_range_fog")
         );
 
         ComputingAppliance fogKecskemetAirport = new ComputingAppliance(
-            fogFilePath,
-            "Kecskemet Airport",
-            new GeoLocation(46.917162998, 19.742830362),
-            true,
-            config.getInteger("node_range_fog")
+                fogFilePath,
+                "Kecskemet Airport",
+                new GeoLocation(46.917162998, 19.742830362),
+                true,
+                config.getInteger("node_range_fog")
         );
 
         ComputingAppliance cloudBudapest = new ComputingAppliance(
-            cloudFilePath,
-            "Budapest main",
-            new GeoLocation(47.497913, 19.040236),
-            true,
-            config.getInteger("node_range_cloud")
+                cloudFilePath,
+                "Budapest main",
+                new GeoLocation(47.497913, 19.040236),
+                true,
+                config.getInteger("node_range_cloud")
         );
 
 
         // Applications
         Application fogapp1 = new Application(
-            config.getInteger("app_freq"),
-            config.getInteger("task_size"),
-            "instance2",
-            "LF-Station-app",
-            config.getInteger("count_of_inst"),
-            config.getInteger("threshold"),
-            config.getString("fog_strategy_1"),
-            true
+                config.getInteger("app_freq"),
+                config.getInteger("task_size"),
+                "instance2",
+                "LF-Station-app",
+                config.getInteger("count_of_inst"),
+                config.getInteger("threshold"),
+                config.getString("fog_strategy_1"),
+                true
         );
 
         Application fogapp2 = new Application(
-            config.getInteger("app_freq"),
-            config.getInteger("task_size"),
-            "instance2",
-            "Kalocsa-app",
-            config.getInteger("count_of_inst"),
-            config.getInteger("threshold"),
-            config.getString("fog_strategy_2"),
-            true
+                config.getInteger("app_freq"),
+                config.getInteger("task_size"),
+                "instance2",
+                "Kalocsa-app",
+                config.getInteger("count_of_inst"),
+                config.getInteger("threshold"),
+                config.getString("fog_strategy_2"),
+                true
         );
 
         Application fogapp3 = new Application(
-            config.getInteger("app_freq"),
-            config.getInteger("task_size"),
-            "instance2",
-            "Debrecent-app",
-            config.getInteger("count_of_inst"),
-            config.getInteger("threshold"),
-            config.getString("fog_strategy_1"),
-            true
+                config.getInteger("app_freq"),
+                config.getInteger("task_size"),
+                "instance2",
+                "Debrecent-app",
+                config.getInteger("count_of_inst"),
+                config.getInteger("threshold"),
+                config.getString("fog_strategy_1"),
+                true
         );
 
         Application fogapp4 = new Application(
-            config.getInteger("app_freq"),
-            config.getInteger("task_size"),
-            "instance2",
-            "Kecskemet-app",
-            config.getInteger("count_of_inst"),
-            config.getInteger("threshold"),
-            config.getString("fog_strategy_2"),
-            true
+                config.getInteger("app_freq"),
+                config.getInteger("task_size"),
+                "instance2",
+                "Kecskemet-app",
+                config.getInteger("count_of_inst"),
+                config.getInteger("threshold"),
+                config.getString("fog_strategy_2"),
+                true
         );
 
         Application cloudapp1 = new Application(
-            config.getInteger("app_freq"),
-            config.getInteger("task_size"),
-            "instance1",
-            "Budapest-app",
-            config.getInteger("count_of_inst"),
-            config.getInteger("threshold"),
-            config.getString("fog_strategy_2"),
-            false
+                config.getInteger("app_freq"),
+                config.getInteger("task_size"),
+                "instance1",
+                "Budapest-app",
+                config.getInteger("count_of_inst"),
+                config.getInteger("threshold"),
+                config.getString("fog_strategy_2"),
+                false
         );
 
         // Registration of the app modules
@@ -200,7 +200,7 @@ public class MainScenario {
         predictor.setFeatureManager(featureManager);
 
         for (ComputingAppliance computingAppliance: ComputingAppliance.allComputingAppliance) {
-            featureManager.addFeature(new Feature(String.format("%s.%s", computingAppliance.name, "memory"), true) {
+            featureManager.addFeature(new Feature(String.format("%s__%s", computingAppliance.name, "Memory"), true) {
                 @Override
                 public double compute() {
                     double result = 0.0;
@@ -215,7 +215,7 @@ public class MainScenario {
                 }
             });
 
-            featureManager.addFeature(new Feature(String.format("%s.%s", computingAppliance.name, "load_of_resource"), true) {
+            featureManager.addFeature(new Feature(String.format("%s__%s", computingAppliance.name, "Load of resource"), true) {
                 @Override
                 public double compute() {
                     double result = 0.0;
@@ -230,7 +230,7 @@ public class MainScenario {
                 }
             });
 
-            featureManager.addFeature(new Feature(String.format("%s.%s", computingAppliance.name, "total_processing_power"), true) {
+            featureManager.addFeature(new Feature(String.format("%s__%s", computingAppliance.name, "Total processing power"), true) {
                 @Override
                 public double compute() {
                     double result = 0.0;
@@ -247,21 +247,18 @@ public class MainScenario {
         }
 
         // Connections and latencies
-        fogDebrecenIA.setLatency(fogKalocsa, 7);
-        fogLFStation.setLatency(fogKalocsa, 15);
-        fogLFStation.setLatency(cloudBudapest, 3);
+        fogKecskemetAirport.setLatency(fogDebrecenIA, 4);
+        fogLFStation.setLatency(fogDebrecenIA, 8);
+        fogDebrecenIA.setLatency(cloudBudapest, 7);
+        fogKalocsa.setLatency(cloudBudapest, 3);
 
-        fogDebrecenIA.setLatency(fogKecskemetAirport, 11);
-        fogKecskemetAirport.setLatency(fogKalocsa, 12);
-        fogKecskemetAirport.setLatency(fogKecskemetAirport, 9);
-
-        fogDebrecenIA.addNeighbor(fogKalocsa, fogLFStation);
+        fogDebrecenIA.addNeighbor(fogKalocsa);
         fogKecskemetAirport.addNeighbor(fogLFStation);
 
-        fogKalocsa.setParentNode(fogKecskemetAirport);
-        fogDebrecenIA.setParentNode(fogKecskemetAirport);
-        fogLFStation.setParentNode(cloudBudapest);
-        fogKecskemetAirport.setParentNode(fogLFStation);
+        fogLFStation.setParentNode(fogDebrecenIA);
+        fogKecskemetAirport.setParentNode(fogDebrecenIA);
+        fogKalocsa.setParentNode(cloudBudapest);
+        fogDebrecenIA.setParentNode(cloudBudapest);
 
 
         // Devices

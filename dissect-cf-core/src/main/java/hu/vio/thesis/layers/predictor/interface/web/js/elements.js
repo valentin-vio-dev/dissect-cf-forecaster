@@ -37,5 +37,9 @@ export const elements = {
     buttonTrainModel: getElement('button-train-model'),
 
     modal: getElement('modal'),
-    modalWrapper: getElement('modal-wrapper')
+    modalWrapper: getElement('modal-wrapper'),
+
+    textRMSE: getElement('text-rmse'),
+    textMAE: getElement('text-mae'),
+    textMSE: getElement('text-mse'),
 };

@@ -120,7 +120,13 @@ const handlePredictorData = (incoming) => {
     if (incoming['command'] === 'LOG') {
         addTerminalMessage(terminalPredictorMessages, incoming['message']);
     } else if (incoming['command'] === 'DATA') {
-
+        if (incoming['event'] === 'prediction-avg-rmse') {
+            elements.textRMSE.innerText = incoming['message'];
+        } else if (incoming['event'] === 'prediction-avg-mae') {
+            elements.textMAE.innerText = incoming['message'];
+        } else if (incoming['event'] === 'prediction-avg-mse') {
+            elements.textMSE.innerText = incoming['message'] == null ? "-" : incoming['message'];
+        }
     } else if (incoming['command'] === 'IMAGE') {
         elements.predictionImage.src = incoming['message'];
     } else if (incoming['command'] === 'COMMAND') {
@@ -151,7 +157,7 @@ const handlePredictorData = (incoming) => {
 
 const handleApplicationData = (incoming) => {
     if (incoming['command'] === 'LOG') {
-        addTerminalMessage(terminalApplicationMessages, incoming['message']['data']);
+        addTerminalMessage(terminalApplicationMessages, incoming['message']);
     } else if (incoming['command'] === 'DATA') {
 
     } else if (incoming['command'] === 'IMAGE') {

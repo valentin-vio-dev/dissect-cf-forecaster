@@ -8,12 +8,6 @@ class ArimaPredictor(IPredictor):
     def __init__(self, config, feature_data_list):
         super().__init__("ARIMA", config, feature_data_list)
 
-    def prepare_data(self, data, windows_size):
-        X, y = [], []
-        for i in range(len(data) - windows_size):
-            X.append(data[i:i + windows_size])
-            y.append(data[i + windows_size])
-        return np.array(X), np.array(y)
 
     def make_prediction(self, config, train, test):
         model = ARIMA(

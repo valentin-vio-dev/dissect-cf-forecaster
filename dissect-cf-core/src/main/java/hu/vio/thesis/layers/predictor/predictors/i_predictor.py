@@ -7,6 +7,7 @@ import io
 import base64
 import csv
 
+from thesis.layers.predictor.preprocessor import Preprocessor
 from thesis.layers.predictor.utils import Utils
 
 
@@ -22,12 +23,14 @@ class IPredictor(ABC):
         pass
 
     def write_to_csv(self, predictions):
-        with open(f"{self.name}.csv", "a", newline="") as file:
-            writer = csv.writer(file)
+        with open(f"{self.config['outputLocation']}/error_metrics.csv", "a", newline="") as file:
+            writer = csv.writer(file, delimiter=";")
 
-            row = []
+            row = [self.config["pred_id"]]
             for pred in predictions:
-                row.append(pred["rmse"])
+                row.append(str(pred["rmse"]).replace(".", ","))
+                row.append(str(pred["mae"]).replace(".", ","))
+                row.append(str(pred["mse"]).replace(".", ","))
             writer.writerow(row)
 
     def calcualte_rmse(self, actual, prediction):
@@ -50,14 +53,14 @@ class IPredictor(ABC):
             sum += abs(test_vals[i] - pred_vals[i])
         return (1 / len(actual)) * sum
 
-    def calcualte_mape(self, actual, prediction):
+    def calcualte_mse(self, actual, prediction):
         sum = 0
 
         test_vals = actual["data"].values
         pred_vals = prediction["data"].values
 
         for i in range(0, len(actual)):
-            sum += abs(test_vals[i] - pred_vals[i]) / test_vals[i]
+            sum += (test_vals[i] - pred_vals[i]) ** 2
         return (1 / len(actual)) * sum
 
     def predict(self):
@@ -78,7 +81,9 @@ class IPredictor(ABC):
                     "original": feature_data["original"],
                     "train": feature_data["train"],
                     "test": feature_data["test"],
-                    "rmse": self.calcualte_rmse(feature_data["test"].copy(), prediction.copy())
+                    "rmse": self.calcualte_rmse(feature_data["test"].copy(), prediction.copy()),
+                    "mae": self.calcualte_mae(feature_data["test"].copy(), prediction.copy()),
+                    "mse": self.calcualte_mse(feature_data["test"].copy(), prediction.copy()),
                 }
                 predictions.append(pred)
 
@@ -95,8 +100,18 @@ class IPredictor(ABC):
             print(e)
 
         return {
-            "image": base64_image
+            "image": base64_image,
+            "avg_rmse": self.calculate_average_error(predictions, "rmse"),
+            "avg_mae": self.calculate_average_error(predictions, "mae"),
+            "avg_mse": self.calculate_average_error(predictions, "mse"),
+            "predictions": predictions
         }
+
+    def calculate_average_error(self, predictions, metric):
+        avg = 0
+        for pred in predictions:
+            avg += pred[metric]
+        return avg / len(predictions)
 
     def find_nearest_upper_square_number(self, value):
         for i in range(value, 1_000):
@@ -233,7 +248,7 @@ class IPredictor(ABC):
         elif len(predictions) == 2:
             fig.set_size_inches(7, 15)
         else:
-            fig.set_size_inches(15, 15)
+            fig.set_size_inches(20, 20)
 
         if self.config["saveStandalone"]:
             plt.savefig(f"{self.config['outputLocation']}/images/{self.name}_{self.config['pred_id']}")
