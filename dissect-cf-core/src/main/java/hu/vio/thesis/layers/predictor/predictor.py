@@ -1,8 +1,10 @@
 from preprocessor import Preprocessor
-from predictors.forecaster_autoreg_predictor import ForecasterAutoregPredictor
 from predictors.arima_predictor import ArimaPredictor
+from thesis.layers.predictor.predictors.linear_predictor import LinearPredictor
+from thesis.layers.predictor.predictors.random_forest_predictor import RandomForestPredictor
 from thesis.layers.predictor.predictors.holt_winters_predictor import HoltWintersPredictor
 from thesis.layers.predictor.predictors.ltsm_predictor import LTSMPredictor
+from thesis.layers.predictor.predictors.svr_predictor import SVRPredictor
 from thesis.layers.predictor.types import AppType, Command
 from utils import Utils
 import csv
@@ -52,14 +54,26 @@ class Predictor:
                         row.append(feature["feature"] + "__" + error_metric)
                 writer.writerow(row)
 
+            with open(f"{self.config['outputLocation']}/time.csv", "w", newline="") as file:
+                writer = csv.writer(file, delimiter=";")
+
+                row = ["Prediction ID"]
+                for feature in feature_data_list:
+                    row.append(feature["feature"])
+                writer.writerow(row)
+
         if predictor_name == "ARIMA":
             predictor = ArimaPredictor(self.config, feature_data_list)
+        elif predictor_name == "SVR":
+            predictor = SVRPredictor(self.config, feature_data_list)
+        elif predictor_name == "RANDOM_FOREST":
+            predictor = RandomForestPredictor(self.config, feature_data_list)
         elif predictor_name == "HOLT_WINTERS":
             predictor = HoltWintersPredictor(self.config, feature_data_list)
-        elif predictor_name == "FORECASTER_AUTOREG":
-            predictor = ForecasterAutoregPredictor(self.config, feature_data_list)
         elif predictor_name == "LTSM":
             predictor = LTSMPredictor(self.config, feature_data_list)
+        elif predictor_name == "LINEAR_REGRESSION":
+            predictor = LinearPredictor(self.config, feature_data_list)
         else:
             raise Exception("No predictor was found!")
 

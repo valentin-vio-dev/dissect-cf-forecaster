@@ -15,25 +15,34 @@ const toggleModal = () => {
 
 const HYPER_PARAMETERS = {
     arima: [
-        { label: 'P value', value: '2', type: 'number', min: '0' },
+        { label: 'P value', value: '3', type: 'number', min: '0' },
         { label: 'D value', value: '0', type: 'number', min: '0' },
         { label: 'Q value', value: '0', type: 'number', min: '0' },
         { label: 'Alpha', value: '0.05', type: 'number', step: '.01' }
     ],
-    forecaster_autoreg: [
+    random_forest: [
+        { label: 'Number of trees', value: '100', type: 'number', min: '0' },
+        { label: 'Max depth', value: '0', type: 'number', min: '0' },
+        { label: 'Lags', value: '10', type: 'number', min: '0' },
+    ],
+    /*forecaster_autoreg: [
         { label: 'Random state', value: '123', type: 'number', min: '0' },
         { label: 'Lags', value: '128', type: 'number', min: '0' }
-    ],
+    ],*/
     holt_winters: [
         { label: 'Trend', value: 'add', type: 'text', hint: 'Values: add, mul' },
-        /*{ label: 'Seasonal', value: 'add', type: 'text', hint: 'Values: add, mul' },
-        { label: 'Seasonal periods', value: '60', type: 'number', min: '0' }*/
+        { label: 'Seasonal', value: 'add', type: 'text', hint: 'Values: add, mul' },
+        { label: 'Seasonal periods', value: '60', type: 'number', min: '0' }
     ],
+    linear_regression: [],
     ltsm: [
-        { label: 'Model location', value: 'D:/dev/dataset', type: 'text', hint: 'Configuration file not found. Train a model in order to predict data!'},
+        { label: 'Model location', value: 'D:/model.h5', type: 'text', hint: 'Configuration file not found. Train a model in order to predict data!'},
         { label: 'Model', value: 'Model settings', type: 'button', callback: () => {
             toggleModal();
         } },
+    ],
+    svr: [
+        { label: 'Kernel', value: 'rbf', type: 'text', hint: 'Values: linear, poly, rbf, sigmoid' },
     ],
     neural_prophet: [],
     fb_prophet: [],

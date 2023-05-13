@@ -84,16 +84,22 @@ public abstract class Predictor {
         switch (predictorName) {
             case "ARIMA":
                 return new ArimaPredictor(chunkSize, smoothing, tranSize);
-            case "FORECASTER_AUTOREG":
-                return new ForecasterAutoregPredictor(chunkSize, smoothing, tranSize);
+            /*case "FORECASTER_AUTOREG":
+                return new ForecasterAutoregPredictor(chunkSize, smoothing, tranSize);*/
             case "HOLT_WINTERS":
                 return new HoltWintersPredictor(chunkSize, smoothing, tranSize);
             case "LTSM":
                 return new LTSMPredictor(chunkSize, smoothing, tranSize);
-            case "NEURAL_PROPHET":
-                return new NeuralProphet(chunkSize, smoothing, tranSize);
-            case "PROPHET":
-                return new ProphetPredictor(chunkSize, smoothing, tranSize);
+            /*case "NEURAL_PROPHET":
+                return new NeuralProphet(chunkSize, smoothing, tranSize);*/
+            /*case "PROPHET":
+                return new ProphetPredictor(chunkSize, smoothing, tranSize);*/
+            case "RANDOM_FOREST":
+                return new RandomForestPredictor(chunkSize, smoothing, tranSize);
+            case "SVR":
+                return new SVRPredictor(chunkSize, smoothing, tranSize);
+            case "LINEAR_REGRESSION":
+                return new LinearPredictor(chunkSize, smoothing, tranSize);
             default:
                 throw new RuntimeException();
         }

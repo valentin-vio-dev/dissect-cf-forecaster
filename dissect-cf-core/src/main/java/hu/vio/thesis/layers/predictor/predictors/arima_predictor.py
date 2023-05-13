@@ -1,4 +1,5 @@
 import numpy as np
+from sklearn import svm
 from statsmodels.tsa.arima.model import ARIMA
 from thesis.layers.predictor.predictors.i_predictor import IPredictor
 import tensorflow as tf
@@ -23,6 +24,7 @@ class ArimaPredictor(IPredictor):
             len(test.index),
             alpha=config["hyperParameters"]["arima-alpha"]
         )
+
         prediction = test.copy()
         prediction["data"] = result
 

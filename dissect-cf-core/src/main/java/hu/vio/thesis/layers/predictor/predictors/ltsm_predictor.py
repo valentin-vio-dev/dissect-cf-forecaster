@@ -25,7 +25,7 @@ class LTSMPredictor(IPredictor):
         model = tf.keras.models.load_model(config['hyperParameters']['ltsm-model_location'])
 
         joined = [*train["data"].values, *test["data"].values]
-        X_test, y_test = self.prepare_data(joined, model_config["windowSize"])
+        X_test, _ = self.prepare_data(joined, model_config["windowSize"])
         predicted = model.predict(X_test)
         predicted = predicted.flatten()
 

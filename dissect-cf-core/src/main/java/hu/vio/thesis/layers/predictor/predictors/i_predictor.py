@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import io
 import base64
 import csv
+import datetime
 
 from thesis.layers.predictor.preprocessor import Preprocessor
 from thesis.layers.predictor.utils import Utils
@@ -31,6 +32,15 @@ class IPredictor(ABC):
                 row.append(str(pred["rmse"]).replace(".", ","))
                 row.append(str(pred["mae"]).replace(".", ","))
                 row.append(str(pred["mse"]).replace(".", ","))
+            writer.writerow(row)
+
+    def write_to_csv_time(self, predictions):
+        with open(f"{self.config['outputLocation']}/time.csv", "a", newline="") as file:
+            writer = csv.writer(file, delimiter=";")
+
+            row = [self.config["pred_id"]]
+            for pred in predictions:
+                row.append(str(pred["time"]).replace(".", ","))
             writer.writerow(row)
 
     def calcualte_rmse(self, actual, prediction):
@@ -63,17 +73,33 @@ class IPredictor(ABC):
             sum += (test_vals[i] - pred_vals[i]) ** 2
         return (1 / len(actual)) * sum
 
+    def align_prediction(self, train, prediction):
+        diff = prediction[0] - train[-1]
+        new_values = []
+        for i in range(0, len(prediction)):
+            res = prediction[i] - diff
+            new_values.append(res)
+        return new_values
+
     def predict(self):
         base64_image = None
 
         try:
             predictions = []
             for feature_data in self.feature_data_list:
+                a = datetime.datetime.now()
                 prediction = self.make_prediction(
                     self.config,
                     feature_data["train"].copy(),
                     feature_data["test"].copy()
                 )
+                b = datetime.datetime.now()
+                delta = b - a
+
+                """prediction["data"] = self.align_prediction(
+                    feature_data["train"]["data"].values,
+                    prediction["data"].values
+                )"""
 
                 pred = {
                     "feature": feature_data["feature"],
@@ -84,6 +110,7 @@ class IPredictor(ABC):
                     "rmse": self.calcualte_rmse(feature_data["test"].copy(), prediction.copy()),
                     "mae": self.calcualte_mae(feature_data["test"].copy(), prediction.copy()),
                     "mse": self.calcualte_mse(feature_data["test"].copy(), prediction.copy()),
+                    "time": int(delta.total_seconds() * 1000),
                 }
                 predictions.append(pred)
 
@@ -94,6 +121,7 @@ class IPredictor(ABC):
                 traceback.print_exc()
 
             self.write_to_csv(predictions)
+            self.write_to_csv_time(predictions)
 
         except Exception as e:
             print("Error while prediction!")

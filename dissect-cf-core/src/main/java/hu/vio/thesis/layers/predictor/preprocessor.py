@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from sklearn import preprocessing
+from scipy.signal import savgol_filter
 
 
 class Preprocessor:
@@ -12,8 +13,11 @@ class Preprocessor:
         data_obj = {"data": data, "timestamp": timestamp}
         dataframe = pd.DataFrame(data_obj)
 
+
+
         if smooth > 0:
-            dataframe["data"] = Preprocessor.smooth_data(dataframe["data"].values, smooth)
+            dataframe["data"] = savgol_filter(dataframe["data"].values, 40, 5)
+            #dataframe["data"] = Preprocessor.smooth_data(dataframe["data"].values, smooth)
 
         if drop_overflow:
             if len(dataframe["data"]) > chunk_size:
@@ -26,6 +30,12 @@ class Preprocessor:
             # the output is an array of arrays, so tidy the dimensions
             #dataframe["data"] = [round(i[0], 2) for i in normed]
             dataframe["data"] = [i[0] for i in normed]
+
+        # prevent zero or lower
+        dd = []
+        for i in range(0, len(dataframe["data"].values)):
+            dd.append(dataframe["data"].values[i] + 0.0000001)
+        dataframe["data"] = dd
 
         dataframe.reset_index(drop=True, inplace=True)
         return dataframe

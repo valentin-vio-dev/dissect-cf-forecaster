@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 from thesis.layers.predictor.utils import Utils
 
-df = pd.read_csv("D:\DissectCF_Repository/5_10_2023_01_02_22/error_metrics.csv", sep=";", decimal=",")
+df = pd.read_csv("D:\DissectCF_Repository\Új mappa\lstm\error_metrics.csv", sep=";", decimal=",")
 df.drop(columns=df.columns[0], axis=1, inplace=True)
 feature_dfs = []
 ca_dfs = []
