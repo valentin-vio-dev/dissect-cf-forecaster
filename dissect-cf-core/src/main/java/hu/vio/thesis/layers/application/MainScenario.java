@@ -329,8 +329,6 @@ public class MainScenario {
             featureManager.exportToCSV(Args.get("outputLocation") + "/dataset/dataset.csv");
         }
 
-        featureManager.exportToCSV("DATA.csv");
-
         socketClient.stopConnection();
     }
 }
